@@ -1,0 +1,127 @@
+//
+// CSV File Animation Loader 2.0
+// by Gabe Montague - gmontague@college.harvard.edu
+//
+
+// Lerps between two values in time
+global proc float timeLerp(float $v1, float $v2, float $t1, float $t2, float $t)
+{
+    if ($t <= $t1) return $v1;
+    if ($t >= $t2) return $v2;
+    return ($t - $t1) * ($v2 - $v1) / ($t2 - $t1) + $v1;
+}
+
+// Sets keyframes for an object attribute based on a matrix CSV file in /data.
+global proc keyframeFromCSVMatrix(string $filename, string $object, float $csvFPS,
+                                  float $adjustX, float $adjustY, float $adjustZ,
+                                  int $columnOffset, float $axisRotation) {
+    
+    // Calculate the time delta of a CSV frame and a maya frame
+    if (`currentUnit -query -time` != "film") warning("Warning: Importer is only designed to convert to 24 FPS.");
+    float $csvTimeDelta = 1.0 / $csvFPS;
+    float $mayaTimeDelta = 1.0 / 24.0;
+
+    string $line = "";
+    
+    // The frame
+    int $time = 0;
+    
+    // The real time in seconds from the last key
+    float $realTimeSinceKey = 0;
+    string $currentValues[];
+
+    // Matrix entries
+    float $currentFloats[];
+    float $previousFloats[];
+    float $lerpedFloats[];
+    
+    // Open the CSV file, stored in the data folder of the current project
+    $fileid = fopen((`workspace -q -rd` + "data/" + ($filename)), "r" );
+    
+    // Set the current time to 0
+    currentTime 0;
+    
+    // Keyframe at 0
+    setKeyframe ($object + ".rotateX");
+    setKeyframe ($object + ".rotateY");
+    setKeyframe ($object + ".rotateZ");
+    
+    // Enable autokeyframe
+    autoKeyframe -state on;
+
+    // Select
+    select ($object);
+
+    // Cycle through file
+    while (!feof($fileid)) {
+        
+        // Update previous matrix
+        if ($time != 0) {
+            
+            for ($i = 0; $i < 9; $i++) {
+                $previousFloats[$i] = $currentFloats[$i];
+            }
+        }
+        
+        // Retrieve current CSV value
+        $currentValues = stringToStringArray(`fgetline( $fileid )`,",");
+
+        for($i=0; $i<9; ++$i)
+        {
+            $currentFloats[$i] = $currentValues[$i + $columnOffset];
+        }
+        
+        // Fill in previous values for first frame
+        if ($time == 0) {
+            
+            for($i=0; $i<9; ++$i) {
+                $previousFloats[$i] = $currentFloats[$i];
+            }
+        }
+
+        // Only set keyframe if we have passed the maya time delta
+        if ($realTimeSinceKey >= $mayaTimeDelta) {
+            
+            // Interpolate the values
+            for($i=0; $i<9; ++$i) {
+                $lerpedFloats[$i] = timeLerp($previousFloats[$i], $currentFloats[$i],
+                  $realTimeSinceKey - $csvTimeDelta, $realTimeSinceKey, $mayaTimeDelta);
+            }
+            
+            // Reset real time
+            $realTimeSinceKey = $realTimeSinceKey % $mayaTimeDelta;
+            
+            // Get current position (leaving this unmodified)
+            $position = `xform -q -a -ws -t`;
+            
+            // Apply matrix absolutely in world space
+            xform -a -ws -m $lerpedFloats[0] $lerpedFloats[1] $lerpedFloats[2] 0.0
+                            $lerpedFloats[3] $lerpedFloats[4] $lerpedFloats[5] 0.0
+                            $lerpedFloats[6] $lerpedFloats[7] $lerpedFloats[8] 0.0
+                            $position[0]     $position[1]     $position[2]     1.0;
+                            
+            // Apply custom rotation
+            rotate -r -ws $adjustX $adjustY $adjustZ;
+            rotate -r -os $axisRotation 0 0;
+            
+            // Increase frame
+            $time += 1;
+            currentTime ($time);
+        }
+            
+
+        // Increase time
+        $realTimeSinceKey += $csvTimeDelta;
+    }
+    
+    print("Completed keyframes for " + $object + ".\n");
+    
+    // Autokeyframe
+    autoKeyframe;
+    autoKeyframe -state off;
+    
+    // Close the file
+    fclose($fileid);
+}
+
+//keyframeFromCSVMatrix "absolute_maya_lowerarm.csv" "rightLowerArm" 200.0 180 0 0;
