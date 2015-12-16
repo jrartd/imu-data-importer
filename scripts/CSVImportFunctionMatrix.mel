@@ -1,6 +1,6 @@
 //
 // CSV File Animation Loader 2.0
-// by Gabe Montague - gmontague@college.harvard.edu
+// by Gabe Montague - gmontague[at]college.harvard.edu
 //
 
 // Lerps between two values in time
@@ -123,5 +123,3 @@ global proc keyframeFromCSVMatrix(string $filename, string $object, float $csvFP
     // Close the file
     fclose($fileid);
 }
-
-//keyframeFromCSVMatrix "absolute_maya_lowerarm.csv" "rightLowerArm" 200.0 180 0 0;
