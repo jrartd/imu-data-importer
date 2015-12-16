@@ -102,7 +102,6 @@ global proc runCSVImport() {
         
         if ($startColumn < 1) error("Failed to animate: Start column must be greater than 0.");
         
-        //print("TODO: Make use of new columns");
         keyframeFromCSVMatrix($csvFile, $object, $gCsvFileFps,
                               $offsets[0], $offsets[1], $offsets[2],
                               $startColumn - 1, $axisRotation);
@@ -340,7 +339,7 @@ global proc showCSVImportWindow() {
                         columnLayout -adjustableColumn yes;
                         
                             // Mode
-                            rowLayout -numberOfColumns 4 -height 22 -columnAlign4 "right" "left" "left" "left"
+                            /*rowLayout -numberOfColumns 4 -height 22 -columnAlign4 "right" "left" "left" "left"
                             -columnWidth 1 131 -cw 2 50 -cw 3 50 -cw 4 100 
                             -columnAttach4 "both" "both" "both" "both"
                             -rowAttach 1 "both" 1 -rat 2 "both" 1 -rat 3 "both" 1 -rat 4 "both" 1;
@@ -349,7 +348,7 @@ global proc showCSVImportWindow() {
                                 radioButton -label "Set" -onCommand ("$gCsvMode = \"set\"") -select;
                                 radioButton -label "Add" -onCommand ("$gCsvMode = \"add\"");
                                 radioButton -label "Multiply" -onCommand ("$gCsvMode = \"multiply\"");
-                            setParent ..;
+                            setParent ..;*/
                             
                             // Time-scale factor
                             rowLayout -numberOfColumns 2 -height 22 -columnAlign2 "right" "left"
